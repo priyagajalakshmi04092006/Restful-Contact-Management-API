@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🌈 RESTFUL CONTACT MANAGEMENT API</title>
+  <style>/* 🌈 Responsive, colorful design */
+body {
+  margin: 0;
+  font-family: "Poppins", sans-serif;
+  background: linear-gradient(120deg, #6a11cb, #2575fc);
+  color: #333;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+header {
+  text-align: center;
+  padding: 20px;
+  color: white;
+  text-shadow: 2px 2px 6px rgba(0,0,0,0.3);
+}
+
+main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 15px;
+}
+
+.form-section, .search-section {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 10px;
+  justify-content: center;
+}
+
+input {
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+  flex: 1 1 200px;
+  font-size: 14px;
+  transition: 0.3s;
+}
+
+input:focus {
+  border-color: #6a11cb;
+  box-shadow: 0 0 10px rgba(106,17,203,0.4);
+  outline: none;
+}
+
+button {
+  padding: 10px 15px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  color: white;
+  font-weight: bold;
+  background: linear-gradient(45deg, #ff512f, #f09819);
+  transition: 0.3s;
+}
+button:hover {
+  transform: scale(1.05);
+  opacity: 0.9;
+}
+
+table {
+  width: 90%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  margin: 15px 0;
+}
+
+th, td {
+  padding: 12px;
+  text-align: left;
+}
+th {
+  background: linear-gradient(45deg, #36d1dc, #5b86e5);
+  color: white;
+}
+tr:nth-child(even) { background: #f7f7ff; }
+tr:hover { background: #e0eaff; }
+
+.edit {
+  background: linear-gradient(45deg, #56ab2f, #a8e063);
+}
+.delete {
+  background: linear-gradient(45deg, #ff0844, #ffb199);
+}
+
+footer {
+  text-align: center;
+  color: white;
+  padding: 10px;
+  font-size: 0.9em;
+}
+
+@media (max-width: 600px) {
+  table, th, td {
+    font-size: 12px;
+  }
+  input, button {
+    flex: 1 1 100%;
+  }
+}
+</style>
+</head>
+<body>
+  <header>
+    <h1>🌈 RESTFUL CONTACT MANAGEMENT API 🌈</h1>
+  </header>
+
+  <main>
+    <section class="form-section">
+      <input id="name" placeholder="👤 Name" />
+      <input id="email" placeholder="📧 Email" />
+      <input id="phone" placeholder="📱 Phone" />
+      <button id="addBtn">➕ Add</button>
+    </section>
+
+    <section class="search-section">
+      <input id="search" placeholder="🔍 Search by name" />
+    </section>
+
+    <section class="table-section">
+      <table id="contactsTable">
+        <thead>
+          <tr><th>Name</th><th>Email</th><th>Phone</th><th>Actions</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+  </main>
+
+  <script>
+    const api = '/api/contacts';
+
+    async function fetchContacts() {
+      const res = await fetch(api);
+      const data = await res.json();
+      renderContacts(data);
+    }
+
+    function renderContacts(data) {
+      const tbody = document.querySelector('#contactsTable tbody');
+      tbody.innerHTML = '';
+      data.forEach(c => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${c.name}</td>
+          <td>${c.email}</td>
+          <td>${c.phone}</td>
+          <td>
+            <button class="edit" onclick="editContact(${c.id})">✏️</button>
+            <button class="delete" onclick="deleteContact(${c.id})">🗑️</button>
+          </td>`;
+        tbody.appendChild(row);
+      });
+    }
+
+    async function addContact() {
+      const name = document.getElementById('name').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const phone = document.getElementById('phone').value.trim();
+      if (!name || !email || !phone) return alert("All fields are required!");
+
+      await fetch(api, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ name, email, phone })
+      });
+
+      document.getElementById('name').value = '';
+      document.getElementById('email').value = '';
+      document.getElementById('phone').value = '';
+      fetchContacts();
+    }
+
+    async function editContact(id) {
+      const newName = prompt("Enter new name:");
+      const newEmail = prompt("Enter new email:");
+      const newPhone = prompt("Enter new phone:");
+      if (!newName || !newEmail || !newPhone) return;
+
+      await fetch(`${api}/${id}`, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ name: newName, email: newEmail, phone: newPhone })
+      });
+      fetchContacts();
+    }
+
+    async function deleteContact(id) {
+      if (!confirm("Delete this contact?")) return;
+      await fetch(`${api}/${id}`, { method: 'DELETE' });
+      fetchContacts();
+    }
+
+    document.getElementById('addBtn').addEventListener('click', addContact);
+
+    document.getElementById('search').addEventListener('input', async e => {
+      const query = e.target.value.toLowerCase();
+      const res = await fetch(api);
+      const data = await res.json();
+      const filtered = data.filter(c => c.name.toLowerCase().includes(query));
+      renderContacts(filtered);
+    });
+
+    fetchContacts();
+  </script>
+</body>
+</html>
